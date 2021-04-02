@@ -17,17 +17,18 @@ The two above ensure that when a connection fails while in progress, the recover
 
 ## Specification
 
+```abnf
 short             = 16*16BIT
-		; SIGNED SHORT INTEGER
+        ; SIGNED SHORT INTEGER
 		
 integer           = 32*32BIT
-		; SIGNED INTEGER
+        ; SIGNED INTEGER
 
 long              = 64*64BIT
-		; SIGNED LONG INTEGER
+        ; SIGNED LONG INTEGER
 
 length            = long
-		; Length specifies the content length in bytes.
+        ; Length specifies the content length in bytes.
 		
 length-none       = 0xFFFFFFFFFFFFFFFF
         ; SIGNED LONG INTEGER
@@ -57,32 +58,32 @@ length-chunked    = 0x00000000
         ; in packet-data.
 		
 flags             = flag-chunked 63*63undefined-flag
-		; Chunking is the only expected flag at the 
-		; moment.
-		; Disabled flags can safely be ignored.
+        ; Chunking is the only expected flag at the 
+        ; moment.
+        ; Disabled flags can safely be ignored.
 		
 flag-chunked      = flag
-		; Specifies whether or not the operation is 
-		; chunked.
+        ; Specifies whether or not the operation is 
+        ; chunked.
 		
 undefined-flag    = flag-disabled
-		; An undefined flag specifies a bit sequence
-		; spared for the future but not used at the 
-		; moment.
+        ; An undefined flag specifies a bit sequence
+        ; spared for the future but not used at the 
+        ; moment.
 		
 flag              = flag-enabled / flag-disabled
-		; Flags are bits, each of which enables or 
-		; disables a feature.
+        ; Flags are bits, each of which enables or 
+        ; disables a feature.
 		
 flag-enabled      = %b1
-		; BINARY ONE
+        ; BINARY ONE
 		
 flag-disabled     = %b0
-		; BINARY ZERO
+        ; BINARY ZERO
 		
 operation-id      = integer
-		; A unique ID specifying the operation number
-		; for a given operation.
+        ; A unique ID specifying the operation number
+        ; for a given operation.
 		
 data              = BIT
 
@@ -105,3 +106,4 @@ state-info        = 0x00000003 (protocol-version)
         ; Begins with SIGNED INTEGER "3"
         
 protocol-version  = integer 
+```
