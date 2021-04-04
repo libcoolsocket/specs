@@ -138,15 +138,16 @@ data              = 8BIT
         ; A data is a byte.
 
 state             = packet-id (state-none / state-close / state-cancel / (state-info state-info state))
-        ; In the case <state-info>s at the end,
-        ; if this is 'receiver', it SHOULD
-        ; first read and, in the second, it
-        ; SHOULD write its respective info
-        ; of the same type requested by 'sender'.
-        ; For instance, if the first <state-info>
-        ; contains <protocol-version>, 'receiver 
-        ; must also send <protocol-version>
-        ; in the second.
+        ; If this is 'receiver', the two 
+        ; <state-info>s at the end are in the
+        ; order of read and write. For 'sender',
+        ; the same SHOULD occur in reverse order.
+        ; 'receiver' SHOULD write its respective
+        ; info of the same type requested by 
+        ; 'sender'. For instance, if the first 
+        ; <state-info> contains <protocol-version>, 
+        ; 'receiver' must send <protocol-version> 
+        ; in theirs.
 
 state-none        = 0x00000000
         ; priority 0
