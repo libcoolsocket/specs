@@ -23,20 +23,7 @@ The two above ensure that when a connection fails while in progress, the recover
 
 ## Specification
 
-```abnf
-short             = 16BIT
-        ; SIGNED SHORT INTEGER
-		
-integer           = 32BIT
-        ; SIGNED INTEGER
-
-long              = 64BIT
-        ; SIGNED LONG INTEGER
-
-length            = long
-        ; Length specifies the content length in 
-        ; bytes.
-        
+```abnf 
 packet            = packet-begin 1*packet-data [packet-end]
         ; The total amount of <packet-data> will 
         ; differ and depend on the delivery
@@ -45,14 +32,14 @@ packet            = packet-begin 1*packet-data [packet-end]
         ; <packet-end> MUST only be present 
         ; when the packet is <flag-chunked>.
         
-packet-begin      = exchange-cycle flags operation-id (length-total / length-chunked) state state
+packet-begin      = exchange-cycle flags packet-id (length-total / length-chunked) state state
         ; If <flags> include <flag-chunked>,
         ; <length-chunked> SHOULD be present 
         ; instead of <length-total>, however,
         ; when this is the case, it MAY safely 
         ; be ignored. 
         ;
-        ; The <operation-id> MUST be consistent
+        ; The <packet-id> MUST be consistent
         ; across a <packet>. 
         ; 
         ; The two <state>s at the end are not a 
@@ -61,7 +48,7 @@ packet-begin      = exchange-cycle flags operation-id (length-total / length-chu
         ; this is the 'sender', the same thing
         ; MUST occur in reverse order.
 
-packet-data       = state operation-id (*<length-total>length / length) <length>data
+packet-data       = state packet-id (*<length-total>length / length) <length>data
         ; The <state> here MUST change direction
         ; once <exchange-cycle> value is reached.
         ; Every time <packet-data> is exchanged,
@@ -73,11 +60,18 @@ packet-data       = state operation-id (*<length-total>length / length) <length>
         ; SHOULD reset the counter, repeating the
         ; process again.
         ; 
-        ; If <operation-id> is inconsistent and
+        ; If <packet-id> is inconsistent and
         ; differs from the one that was present
         ; in <packet-begin>, you SHALL reject
         ; this and SHOULD close the 'connection'
         ; because this is a programmer error.
+        ;
+        ; If this is not <flag-chunked> and 
+        ; <length-total> has become available
+        ; in <packet-begin>, <length> SHOULD not
+        ; be greater than it. With each 
+        ; <packet-data>, <length-total> SHOULD
+        ; be consumed <length> amount. 
         ; 
         ; <data> MUST be <length> in length. 
         ; The length MUST NOT be larger than
@@ -126,8 +120,8 @@ flag-enabled      = %b1
 flag-disabled     = %b0
         ; BINARY ZERO
 		
-operation-id      = integer
-        ; A unique ID specifying the operation 
+packet-id         = integer
+        ; A unique ID specifying the <packet>
         ; a <packet-data> is intended for.
         
 length-total      = length
@@ -143,27 +137,48 @@ length-chunked    = 0x00000000
 data              = 8BIT
         ; A data is a byte.
 
-state             = operation-id (state-none / state-close / state-cancel / (state-info state))
+state             = packet-id (state-none / state-close / state-cancel / (state-info state-info state))
+        ; In the case <state-info>s at the end,
+        ; if this is 'receiver', it SHOULD
+        ; first read and, in the second, it
+        ; SHOULD write its respective info
+        ; of the same type requested by 'sender'.
+        ; For instance, if the first <state-info>
+        ; contains <protocol-version>, 'receiver 
+        ; must also send <protocol-version>
+        ; in the second.
 
 state-none        = 0x00000000
         ; priority 0
         ; Begins with SIGNED INTEGER "0"
+        ;
+        ; Denotes that there isn't anything
+        ; to do.
 
 state-close       = 0x00000001
         ; priority 10
         ; Begins with SIGNED INTEGER "1"
-
+        ;
+        ; You MUST close the connection 
+        ; afterwards and MUST disallow any
+        ; exchange of data.
+        
 state-cancel      = 0x00000002
         ; priority 9
         ; Begins with SIGNED INTEGER "2"
+        ;
+        ; The <packet> that this appeared
+        ; on MUST be cancelled and should
+        ; no longer be used. The connection
+        ; MAY be retained.
         
 state-info        = 0x00000003 (protocol-version)
         ; priority 8
-        ; Begins with SIGNED INTEGER "3"
+        ; Begins with SIGNED INTEGER "3" 
         
-protocol-version  = integer
+protocol-version  = 0x00000000 integer
         ; The CoolSocket protocol version exchanged
-        ; between the two. to enable compatibility 
+        ; between the two to enable compatibility 
         ; when needed.
 
 length-eof       = 0xFFFFFFFFFFFFFFFF
@@ -171,3 +186,13 @@ length-eof       = 0xFFFFFFFFFFFFFFFF
         ;
         ; Denotes that there is no more data in 
         ; pipeline.
+		
+integer           = 32BIT
+        ; SIGNED INTEGER
+
+long              = 64BIT
+        ; SIGNED LONG INTEGER
+
+length            = long
+        ; Length specifies the content length in 
+        ; bytes.
